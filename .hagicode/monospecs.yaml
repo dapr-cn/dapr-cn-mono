@@ -10,7 +10,7 @@ repositories:
   displayName: "docs"
   tags: [ content, translation, docs, status-active ]
   status: "active"
-  note: "Chinese translation of the Dapr documentation; holds openspec/ and monospecs.yaml."
+  note: "Chinese translation of the Dapr documentation; holds monospecs.yaml; its OpenSpec specs now live in the mono repo under openspec/."
 
 - path: "repos/dapr-docs-copilot"
   url: "https://github.com/dapr-cn/dapr-docs-copilot.git"
