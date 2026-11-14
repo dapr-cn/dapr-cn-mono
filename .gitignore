@@ -1,4 +1,4 @@
-# Repositories are cloned here and managed separately
+# Repository checkouts (not tracked; use `pnpm run sync:repos` to set up)
 repos/
 
 node_modules/
