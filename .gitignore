@@ -1,0 +1,4 @@
+# Repositories are cloned here and managed separately
+repos/
+
+node_modules/

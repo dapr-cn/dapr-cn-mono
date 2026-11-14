@@ -1,0 +1,76 @@
+version: "1.0"
+
+# Repositories of the dapr-cn organization, cloned into repos/ (ignored by this repo).
+# Run `npm run sync:repos` to clone missing ones and fast-forward existing clean ones.
+# status: active (pushed in 2026) | stale (last push 2021–2025) | archived | fork (mirror of an upstream project)
+
+repositories:
+- path: "repos/docs"
+  url: "https://github.com/dapr-cn/docs.git"
+  displayName: "docs"
+  tags: [ content, translation, docs, status-active ]
+  status: "active"
+  note: "Chinese translation of the Dapr documentation; holds openspec/ and monospecs.yaml."
+
+- path: "repos/dapr-docs-copilot"
+  url: "https://github.com/dapr-cn/dapr-docs-copilot.git"
+  displayName: "dapr-docs-copilot"
+  tags: [ tooling, workbench, typescript, status-active ]
+  status: "active"
+  note: "Translation workbench (Vite + TypeScript); has one open pull request."
+
+- path: "repos/fork-docs"
+  url: "https://github.com/dapr-cn/fork-docs.git"
+  displayName: "fork-docs"
+  tags: [ fork, docs, v1.17, status-active ]
+  status: "fork"
+  note: "Fork of dapr/docs; default branch v1.17 is kept in sync with upstream."
+
+- path: "repos/dapr-cn-site"
+  url: "https://github.com/dapr-cn/dapr-cn-site.git"
+  displayName: "dapr-cn-site"
+  tags: [ site, hugo, status-stale ]
+  status: "stale"
+  note: "Community website; last push 2025-08-19; deployed to Azure Static Web Apps."
+
+- path: "repos/docs-team"
+  url: "https://github.com/dapr-cn/docs-team.git"
+  displayName: "docs-team"
+  tags: [ team, docusaurus, archived ]
+  status: "archived"
+  note: "Archived translation-team notes; still shows 9 stale open pull requests."
+
+- path: "repos/docsy"
+  url: "https://github.com/dapr-cn/docsy.git"
+  displayName: "docsy"
+  tags: [ fork, hugo-theme, status-stale ]
+  status: "fork"
+  note: "Fork of the Docsy Hugo theme; last push 2023-04-04."
+
+- path: "repos/wowchemy-hugo-themes"
+  url: "https://github.com/dapr-cn/wowchemy-hugo-themes.git"
+  displayName: "wowchemy-hugo-themes"
+  tags: [ fork, hugo-theme, status-stale ]
+  status: "fork"
+  note: "Modified wowchemy theme used by the community site; last push 2023-04-04."
+
+- path: "repos/dapr-cn-site-source"
+  url: "https://github.com/dapr-cn/dapr-cn-site-source.git"
+  displayName: "dapr-cn-site-source"
+  tags: [ site, content, status-stale ]
+  status: "stale"
+  note: "Source-code analysis content for the community site; last push 2022-09-14."
+
+- path: "repos/dapr-cn-site-case"
+  url: "https://github.com/dapr-cn/dapr-cn-site-case.git"
+  displayName: "dapr-cn-site-case"
+  tags: [ site, content, status-stale ]
+  status: "stale"
+  note: "User case content for the community site; last push 2022-07-14."
+
+- path: "repos/dapr-cn.github.io"
+  url: "https://github.com/dapr-cn/dapr-cn.github.io.git"
+  displayName: "dapr-cn.github.io"
+  tags: [ publish, gh-pages, status-stale ]
+  status: "stale"
+  note: "Published static output of dapr-cn/docs (gh-pages branch); last push 2021-11-13."

@@ -1,0 +1,14 @@
+{
+  "name": "dapr-cn-mono",
+  "version": "1.0.0",
+  "description": "Management repository for the dapr-cn Chinese Dapr community repositories",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "sync:repos": "node scripts/sync-repos.mjs"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "js-yaml": "^4.3.2"
+  }
+}
