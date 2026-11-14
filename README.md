@@ -10,6 +10,7 @@ This repository holds only management files. Each project lives in its own GitHu
 dapr-cn-mono/
 ├── .hagicode/monospecs.yaml   # list of repositories, their URLs, tags and status
 ├── scripts/sync-repos.mjs     # clone missing repositories, fast-forward clean ones
+├── openspec/                  # OpenSpec specs and changes for all repositories
 ├── package.json
 └── repos/                     # clones (not tracked)
 ```
