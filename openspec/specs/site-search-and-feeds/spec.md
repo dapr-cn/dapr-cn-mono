@@ -6,12 +6,17 @@ Specifies how visitors and crawlers discover content on the migrated site: full-
 ## Requirements
 
 ### Requirement: Visitors can search site content
-The site SHALL provide full-text search over posts, events and publications that works with Chinese text and runs without an external service.
+The site SHALL provide full-text search over posts, events, publications and the pages of the `/case/` and `/source/` sections that works with Chinese text and runs without an external service.
 
 #### Scenario: Chinese query
 - **GIVEN** a post whose body contains "服务调用"
 - **WHEN** a visitor searches for "服务调用"
 - **THEN** the results include that post with its title and a link
+
+#### Scenario: Section page found
+- **GIVEN** the page `/source/join/how-to-study/` contains "构建块"
+- **WHEN** a visitor searches for "构建块"
+- **THEN** the results include that page with its title and a link
 
 #### Scenario: No results
 - **WHEN** a visitor searches for a term that appears in no entry
@@ -41,6 +46,10 @@ The site SHALL publish a sitemap listing every public page with its absolute `ht
 #### Scenario: Sitemap lists pages
 - **WHEN** a crawler fetches `/sitemap.xml`, the path the Hugo site used
 - **THEN** the sitemap contains every post, event, publication, author and tag page
+
+#### Scenario: Sitemap lists section pages
+- **WHEN** a crawler fetches `/sitemap.xml`
+- **THEN** the sitemap contains every page under `/case/` and `/source/`
 
 #### Scenario: Robots file
 - **WHEN** a crawler fetches `/robots.txt`
