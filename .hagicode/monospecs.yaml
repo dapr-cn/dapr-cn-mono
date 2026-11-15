@@ -12,12 +12,12 @@ repositories:
   status: "active"
   note: "Chinese translation of the Dapr documentation; holds monospecs.yaml; its OpenSpec specs now live in the mono repo under openspec/."
 
-- path: "repos/dapr-docs-copilot"
-  url: "https://github.com/dapr-cn/dapr-docs-copilot.git"
-  displayName: "dapr-docs-copilot"
-  tags: [ tooling, workbench, typescript, status-active ]
+- path: "repos/agent-skills"
+  url: "https://github.com/dapr-cn/agent-skills.git"
+  displayName: "agent-skills"
+  tags: [ tooling, agent-skills, translation, status-active ]
   status: "active"
-  note: "Translation workbench (Vite + TypeScript); has one open pull request."
+  note: "Agent skills of the organization; holds dapr-docs-translation, copied from doc-translation of newbe36524/personal-agent-skills."
 
 - path: "repos/fork-docs"
   url: "https://github.com/dapr-cn/fork-docs.git"
@@ -32,27 +32,6 @@ repositories:
   tags: [ site, hugo, status-stale ]
   status: "stale"
   note: "Community website; last push 2025-08-19; deployed to Azure Static Web Apps."
-
-- path: "repos/docs-team"
-  url: "https://github.com/dapr-cn/docs-team.git"
-  displayName: "docs-team"
-  tags: [ team, docusaurus, archived ]
-  status: "archived"
-  note: "Archived translation-team notes; still shows 9 stale open pull requests."
-
-- path: "repos/docsy"
-  url: "https://github.com/dapr-cn/docsy.git"
-  displayName: "docsy"
-  tags: [ fork, hugo-theme, status-stale ]
-  status: "fork"
-  note: "Fork of the Docsy Hugo theme; last push 2023-04-04."
-
-- path: "repos/wowchemy-hugo-themes"
-  url: "https://github.com/dapr-cn/wowchemy-hugo-themes.git"
-  displayName: "wowchemy-hugo-themes"
-  tags: [ fork, hugo-theme, status-stale ]
-  status: "fork"
-  note: "Modified wowchemy theme used by the community site; last push 2023-04-04."
 
 - path: "repos/dapr-cn-site-source"
   url: "https://github.com/dapr-cn/dapr-cn-site-source.git"
@@ -74,3 +53,40 @@ repositories:
   tags: [ publish, gh-pages, status-stale ]
   status: "stale"
   note: "Published static output of dapr-cn/docs (gh-pages branch); last push 2021-11-13."
+
+# Versioned checkouts read and written by the zh data tasks (zh:data:sync, zh:data:repair).
+# `branch` is the branch provisioning clones or switches to; `optional: true` skips the entry
+# instead of failing when its remote or branch is unreachable.
+- path: "repos/v1.17"
+  url: "https://github.com/dapr/docs.git"
+  displayName: "v1.17"
+  branch: "v1.17"
+  tags: [ data, upstream, source ]
+  status: "active"
+  note: "Upstream Dapr docs for v1.17; source documents for the zh data sync (required)."
+
+- path: "repos/v1.17_zh"
+  url: "https://github.com/dapr/docs-zh.git"
+  displayName: "v1.17_zh"
+  branch: "v1.17_content"
+  tags: [ data, zh-official ]
+  status: "active"
+  note: "Chinese translation data for v1.17; written by zh:data:sync (required)."
+
+- path: "repos/v1.15"
+  url: "https://github.com/dapr/docs.git"
+  displayName: "v1.15"
+  branch: "v1.15"
+  optional: true
+  tags: [ data, upstream, source ]
+  status: "active"
+  note: "Upstream Dapr docs for v1.15; source documents for the zh data sync (optional)."
+
+- path: "repos/v1.15_zh"
+  url: "https://github.com/dapr/docs-zh.git"
+  displayName: "v1.15_zh"
+  branch: "v1.15_content"
+  optional: true
+  tags: [ data, zh-official ]
+  status: "active"
+  note: "Chinese translation data for v1.15; written by zh:data:sync (optional)."

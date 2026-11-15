@@ -5,10 +5,24 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "sync:repos": "node scripts/sync-repos.mjs"
+    "sync:repos": "node scripts/sync-repos.mjs",
+    "sync:repos:test": "node --test scripts/tests/sync-repos.test.mjs",
+    "zh:data:check": "node scripts/check-zh-data-workspace.mjs",
+    "zh:data:check:test": "node --test scripts/tests/check-zh-data-workspace.test.mjs",
+    "zh:data:sync": "tsx scripts/zh-data/sync_source_documents.ts",
+    "zh:data:test": "tsx scripts/zh-data/tests/test_sync_source_documents.ts",
+    "zh:data:repair": "tsx scripts/zh-data/repair_translation_integrity.ts",
+    "docs:verify": "tsx scripts/docs-verify/start-local-docs-verification.ts",
+    "docs:verify:test": "tsx scripts/docs-verify/tests/validate-local-docs-verification.ts"
   },
   "license": "MIT",
   "dependencies": {
     "js-yaml": "^4.3.2"
-  }
+  },
+  "devDependencies": {
+    "@types/node": "^25.3.2",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  },
+  "packageManager": "pnpm@12.16.1"
 }
