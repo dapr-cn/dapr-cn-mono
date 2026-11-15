@@ -33,20 +33,6 @@ repositories:
   status: "stale"
   note: "Community website; last push 2025-08-19; deployed to Azure Static Web Apps."
 
-- path: "repos/dapr-cn-site-source"
-  url: "https://github.com/dapr-cn/dapr-cn-site-source.git"
-  displayName: "dapr-cn-site-source"
-  tags: [ site, content, status-stale ]
-  status: "stale"
-  note: "Source-code analysis content for the community site; last push 2022-09-14."
-
-- path: "repos/dapr-cn-site-case"
-  url: "https://github.com/dapr-cn/dapr-cn-site-case.git"
-  displayName: "dapr-cn-site-case"
-  tags: [ site, content, status-stale ]
-  status: "stale"
-  note: "User case content for the community site; last push 2022-07-14."
-
 - path: "repos/dapr-cn.github.io"
   url: "https://github.com/dapr-cn/dapr-cn.github.io.git"
   displayName: "dapr-cn.github.io"
