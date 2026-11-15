@@ -10,15 +10,16 @@ The copilot (workbench UI, PR workbench, local verification site, translation ex
 
 - Move the zh data sync task and its test from `repos/docs/scripts/zh-data/` to the mono root's `scripts/zh-data/`, exposed as `zh:data:sync` and `zh:data:test` in the mono `package.json`.
 - Carry the integrity logic the sync task depends on out of the copilot: copy `translation-integrity-audit.ts` and `translation-integrity-models.ts` (both use only Node built-ins) into `scripts/zh-data/lib/`, repoint the two imports in the sync script to them, and add `zh:data:repair` (a copy of the 50-line `repair-translation-integrity.ts` entry) so audit and repair stay reachable. After this, `scripts/zh-data/**` has no import from `repos/dapr-docs-copilot`.
-- Add `tsx`, `typescript` and `@types/node` to the mono `package.json` and `pnpm-lock.yaml`.
+- Add `tsx`, `typescript` and `@types/node` to the mono `package.json` and `pnpm-lock.yaml`. All commands use pnpm, as in the other dapr-cn repositories: add a mono-root `pnpm-workspace.yaml` that allows the `esbuild` build script (`tsx` needs its platform binary, and pnpm 12 reads this setting from that file) and pin `packageManager` to the same pnpm version `repos/docs` uses.
+- Treat the pnpm conversion already present in `repos/docs` (`pnpm-lock.yaml`, `pnpm-workspace.yaml`, `packageManager`, pnpm commands in its README) as the baseline: later edits to `repos/docs` build on it and never revert it.
 - Declare only the checkouts the data task needs in `.hagicode/monospecs.yaml`: `v1.17` and `v1.17_zh` (required), `v1.15` and `v1.15_zh` (optional), each with its `branch`. Teach `scripts/sync-repos.mjs` the `branch` and `optional` fields that `docs/scripts/clone-repos.mjs` supports today, keeping its "never touch a dirty tree" guarantee.
 - Add a read-only data workspace check at the mono root that reports a missing checkout, missing `tsx` or missing `zh:data:sync` task with an actionable message.
-- Retire the data tasks from `repos/docs` after the mono root passes validation: remove `scripts/zh-data/**`, `scripts/clone-repos.mjs`, `monospecs.yaml` and the `zh:data:*` and `clone:*` npm scripts; keep `docs` as content only (`src/content`, `src/translated_content`, Crowdin workflows).
+- Retire the data tasks from `repos/docs` after the mono root passes validation: remove `scripts/zh-data/**`, `scripts/clone-repos.mjs`, `monospecs.yaml` and the `zh:data:*` and `clone:*` package scripts, and the dependencies and pnpm build allowance that only those scripts needed; keep `docs` as content only (`src/content`, `src/translated_content`, Crowdin workflows).
 - Update `repos/docs/README.md` ("源码同步") and `repos/docs/SRC_TRANSLATION_BUILD_ANALYSIS.md` to point at the mono root.
 - Audit the other target repositories for references to the old root and record "no change" where none exist.
-- **Out of scope** (copilot-owned, to be removed later): the workbench UI and Vite dev endpoints, translation execution, translation output validation, alias normalization and backfill, the PR workbench, the local verification site, `fork-v1.15` and `fork-v1.17` checkouts, the copilot's npm suites and README. `repos/dapr-docs-copilot` is not edited, and running it from the mono root is neither a goal nor a supported path of this change.
+- **Out of scope** (copilot-owned, to be removed later): the workbench UI and Vite dev endpoints, translation execution, translation output validation, alias normalization and backfill, the PR workbench, the local verification site, `fork-v1.15` and `fork-v1.17` checkouts, the copilot's test suites and README. `repos/dapr-docs-copilot` is not edited, and running it from the mono root is neither a goal nor a supported path of this change.
 
-**BREAKING** for anyone who still runs `npm run zh:data:sync` or `npm run clone:repos` inside `repos/docs`: those entry points are removed after migration.
+**BREAKING** for anyone who still runs `pnpm run zh:data:sync` or `pnpm run clone:repos` inside `repos/docs`: those entry points are removed after migration.
 
 ### Migration flow
 
@@ -42,8 +43,9 @@ flowchart TD
 
 | File Path | Change Type | Change Reason | Impact Scope |
 |-----------|-------------|---------------|--------------|
-| `package.json` (mono root) | Modify | Add `zh:data:sync`, `zh:data:test`, `zh:data:repair`, `zh:data:check`, `sync:repos:test` scripts and `tsx`, `typescript`, `@types/node` dev dependencies | Mono root toolchain |
+| `package.json` (mono root) | Modify | Add `zh:data:sync`, `zh:data:test`, `zh:data:repair`, `zh:data:check`, `sync:repos:test` scripts, `tsx`, `typescript`, `@types/node` dev dependencies and the `packageManager` pin | Mono root toolchain |
 | `pnpm-lock.yaml` (mono root) | Modify | Lock the new dev dependencies | Mono root install |
+| `pnpm-workspace.yaml` (mono root) | Add | pnpm 12 settings: `allowBuilds: esbuild: true` so `tsx` gets its platform binary | Mono root install |
 | `.hagicode/monospecs.yaml` (mono root) | Modify | Declare `v1.17`, `v1.17_zh` (required) and `v1.15`, `v1.15_zh` (optional) with `branch` | Checkout provisioning |
 | `scripts/sync-repos.mjs` (mono root) | Modify | Support `branch` and `optional`; keep dirty-tree skip and fast-forward-only pull | Checkout provisioning |
 | `scripts/tests/sync-repos.test.mjs` (mono root) | Add | Test the provisioning behaviors | Provisioning validation |
@@ -57,8 +59,8 @@ flowchart TD
 | `repos/docs/scripts/zh-data/**` | Delete | Task ownership moves to the mono root | `docs` |
 | `repos/docs/scripts/clone-repos.mjs` | Delete | Replaced by mono `sync-repos.mjs` | `docs` |
 | `repos/docs/monospecs.yaml` | Delete | Checkout declaration moves to the mono root | `docs` |
-| `repos/docs/package.json`, `package-lock.json` | Modify | Remove retired scripts and unused dependencies | `docs` |
-| `repos/docs/README.md` | Modify | Point "源码同步" at the mono root | `docs` docs |
+| `repos/docs/package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml` | Modify | On top of the committed pnpm conversion: remove retired scripts, dependencies they alone needed, and the `esbuild` build allowance | `docs` |
+| `repos/docs/README.md` | Modify | Replace the pnpm "源码同步" commands (`pnpm run clone:repos`) with a pointer to the mono root | `docs` docs |
 | `repos/docs/SRC_TRANSLATION_BUILD_ANALYSIS.md` | Modify | Update references to removed scripts and the old root | `docs` docs |
 | `repos/dapr-docs-copilot/**` | No change | Scheduled for removal; the only coupling (sync-script imports) is cut by copying two modules | None |
 | `repos/fork-docs`, `dapr-cn-site`, `dapr-cn-site-case`, `dapr-cn-site-source`, `dapr-cn.github.io`, `docs-team`, `docsy`, `wowchemy-hugo-themes` | Verify (no change) | No references to the data tasks were found | None |
@@ -75,7 +77,8 @@ flowchart TD
 ## Impact
 
 - **Operators:** dataset sync and integrity repair are run from the mono root. Entry points inside `repos/docs` disappear.
-- **Dependencies:** the mono root gains `tsx`, `typescript` and `@types/node`. `repos/docs` drops `animejs`, `chalk`, `cli-table3`, `commander`, `glob`, `ora` and `js-yaml`, which its remaining files do not use.
+- **Dependencies:** the mono root gains `tsx`, `typescript` and `@types/node`. `repos/docs` drops `animejs`, `chalk`, `cli-table3`, `commander`, `glob`, `ora` and `js-yaml`, which its remaining files do not use, and, once its scripts are retired, `tsx`, `typescript` and `@types/node`.
+- **Package manager:** pnpm only. The mono root gets the same pnpm 12 setup (`pnpm-workspace.yaml`, `packageManager`) the other repositories already have; pnpm forwards script arguments directly, so commands are written `pnpm run zh:data:sync --source-repo ...` without `--`.
 - **Duplicated code:** the integrity modules exist in both the mono root and the copilot until the copilot is removed. The mono root copy is the source of truth after migration; the copilot copy is frozen.
 - **Data:** no translation content or `repos/*_zh/data/*.json` file changes because of the move. Checkouts are untracked (`repos/` is git-ignored) and are provisioned, not committed.
 - **Copilot:** unchanged. Anything that relied on `docs` being its root (PR workbench, fork checkouts, `docs:verify`, translation execution) is not covered here.

@@ -70,16 +70,20 @@ The system SHALL direct runtime-generated verification artifacts such as generat
 - **WHEN** the local Hugo server starts successfully
 - **THEN** any cache, log, or temporary output directory used by the verification runtime SHALL resolve inside the selected zh repository rather than inside `repos/v1.17`
 
-### Requirement: Copilot exposes a one-command startup entry
-The system SHALL provide an npm command in `repos/dapr-docs-copilot` that serves as the canonical entry point for launching the local verification site, and that command MUST pass the requested version and resolved repository paths to the zh-repository runner.
+### Requirement: Mono root exposes a one-command startup entry
+The system SHALL provide a `docs:verify` command at the mono root that serves as the canonical entry point for launching the local verification site, and that command MUST pass the requested version and the resolved repository paths to the zh-repository runner without requiring `repos/dapr-docs-copilot`.
 
-#### Scenario: Operator launches verification site from copilot repository
-- **WHEN** the operator runs the documented npm verification command from `repos/dapr-docs-copilot`
-- **THEN** the command SHALL invoke the zh-repository startup flow without requiring the operator to manually enter a second repository and run another script by hand
+#### Scenario: Operator launches the verification site from the mono root
+- **WHEN** the operator runs `pnpm run docs:verify` at the mono root
+- **THEN** the command SHALL invoke the zh-repository startup flow for `repos/v1.17` and `repos/v1.17_zh` by default, without a second repository or a manual second script
 
 #### Scenario: Version and network parameters are forwarded
-- **WHEN** the operator supplies parameters such as `version`, `sourceRepo`, `zhRepo`, `host`, or `port`
-- **THEN** the npm entry point SHALL forward those resolved values to the zh-repository runner so the launched site reflects the requested configuration
+- **WHEN** the operator supplies `version`, `sourceRepo`, `zhRepo`, `host` or `port`
+- **THEN** the entry point SHALL forward the resolved values to the zh-repository runner so the launched site reflects the requested configuration
+
+#### Scenario: Entry test runs from the mono root
+- **WHEN** the operator runs `pnpm run docs:verify:test` at the mono root
+- **THEN** the entry's test suite MUST run and report pass or fail through its exit code
 
 ### Requirement: Startup flow is diagnosable and iteration-friendly
 The system SHALL emit stable startup diagnostics that identify the resolved source repository, zh repository, generated configuration path, and preview URL, and it MUST fail with actionable error messages when required dependencies or runtime conditions are not satisfied.

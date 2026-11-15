@@ -4,13 +4,14 @@
 
 See `proposal.md` (Why) for motivation and the scope narrowing: the copilot will be removed later, so only the key data part migrates. Findings from reading the repositories:
 
-- The data task layer in `docs` is `package.json` (`zh:data:sync`, `zh:data:test`, `clone:repos`), `scripts/zh-data/sync_source_documents.ts` plus its test, `scripts/clone-repos.mjs` (reads `monospecs.yaml`, supports `branch` and `optional`) and `monospecs.yaml`.
+- The data task layer in `docs` is `package.json` (`zh:data:sync`, `zh:data:test`, `clone:repos`, `clone:all` as `pnpm run clone:repos`), `scripts/zh-data/sync_source_documents.ts` plus its test, `scripts/clone-repos.mjs` (reads `monospecs.yaml`, supports `branch` and `optional`) and `monospecs.yaml`.
 - `sync_source_documents.ts` copies source documents into `repos/<version>_zh/data/source/**` and writes `sync-status.json`, `source.json`, `glossary.json`, `integrity-report.json` and the copy log. It computes the translated state through `reconcileTranslationIntegrity`.
 - That function and its types come from `repos/dapr-docs-copilot/src/server/translation-integrity-audit.ts` (about 1,060 lines) and `src/lib/translation-integrity-models.ts` (about 240 lines). They import only Node built-ins and each other. The sync script's only copilot imports are these two files.
 - `scripts/repair-translation-integrity.ts` (50 lines) is a command wrapper over the same audit module, with no other imports.
 - Everything else in the copilot depends on copilot-only code or on the layout `<root>/repos/...`: the workbench admin, alias backfill, output validation, PR workbench and verification site. The pipeline integrity test imports the workbench admin, so it is not data-only.
-- The mono root has `pnpm`, `js-yaml`, `scripts/sync-repos.mjs` (no `branch`/`optional`), a ten-entry `.hagicode/monospecs.yaml` without versioned checkouts, and `openspec/specs/zh-*` for the workbench.
-- `repos/docs` has a clean tree on `main`.
+- The mono root has a `pnpm-lock.yaml` and `js-yaml`, but no `packageManager` pin and no `pnpm-workspace.yaml`. It also has `scripts/sync-repos.mjs` (no `branch`/`optional`), a ten-entry `.hagicode/monospecs.yaml` without versioned checkouts, and `openspec/specs/zh-*` for the workbench.
+- The pnpm conversion is already committed in `repos/docs` (`8d5e936`, `f2b4d1b`) and `repos/dapr-docs-copilot` (`2b24fb0`, `a5bd141`): `package-lock.json` removed, `pnpm-lock.yaml` and `pnpm-workspace.yaml` added, `packageManager: pnpm@12.16.1`, README commands switched to `pnpm run`. `pnpm-workspace.yaml` carries `allowBuilds: esbuild: true`, because pnpm 12 reads that setting from the workspace file and `tsx` needs esbuild's platform binary. The copilot now lists `tsx` as its own dev dependency and calls it directly; its dev sync endpoint calls `pnpm run zh:data:sync`.
+- `repos/docs` and `repos/dapr-docs-copilot` have clean working trees with that conversion in their history. Other pnpm users: `repos/dapr-cn-site`. `package-lock.json` or `yarn.lock` remain only in `dapr-cn-site-source`, `fork-docs` and `wowchemy-hugo-themes`, which are stale or forks and outside this change.
 
 ## Goals / Non-Goals
 
@@ -99,8 +100,9 @@ Add `branch` and `optional` support to the existing tool: clone with `--branch`,
 Declare `v1.17` and `v1.17_zh` as required and `v1.15` and `v1.15_zh` as `optional: true`, copying URL and `branch` from `docs/monospecs.yaml`. `fork-v1.15` and `fork-v1.17` serve only the PR workbench and are not declared. `repos/fork-docs` stays one separate checkout.
 - Alternative: declare the full six-entry set from `docs`. It adds clones nothing in the migrated scope reads.
 
-### D4. Toolchain at the mono root, installed with pnpm
-`tsx`, `typescript` and `@types/node` become root dev dependencies, matching `docs`' toolchain for the same scripts. The sync script runs without a `tsconfig`, as it did in `docs`.
+### D4. Toolchain at the mono root, pnpm only
+`tsx`, `typescript` and `@types/node` become root dev dependencies, matching `docs`' toolchain for the same scripts. The mono root adopts the setup `docs` already has: a `pnpm-workspace.yaml` containing `allowBuilds: esbuild: true` and a `packageManager` pin to the same pnpm version (`pnpm@12.16.1`). Without the build allowance pnpm 12 skips esbuild's install script and `tsx` fails to start. All documented commands are `pnpm run <script> <args>`, with no `--` before arguments. The sync script runs without a `tsconfig`, as it did in `docs`.
+- Alternative: leave the mono root unpinned and rely on a global pnpm. A pin makes the root behave the same on every machine and matches the other repositories.
 
 ### D5. The workspace check is plain Node ESM with no dependency on `tsx`
 `scripts/check-zh-data-workspace.mjs` uses only Node built-ins and `js-yaml` (already installed) so it can run and report when `tsx` itself is missing. It reads `.hagicode/monospecs.yaml`, the root `package.json` and the `repos/` tree, writes nothing, and exits non-zero with one line per unmet precondition and the provisioning command (`pnpm install` or `pnpm run sync:repos`). The v1.15 set is reported as information only.
@@ -109,7 +111,7 @@ Declare `v1.17` and `v1.17_zh` as required and `v1.15` and `v1.15_zh` as `option
 Order: provisioning, toolchain, copied and moved tasks, check script, validation at the mono root, then removal from `docs`. At every point at least one root can run `zh:data:sync`.
 
 ### D7. Transition of ongoing work
-`repos/docs` has no uncommitted or in-flight task work. Before removing its entry points, any local branch that edits `repos/docs/scripts/zh-data/**` is moved to the mono root path. Edits to integrity logic made after migration go to the mono copy only. The copilot is neither migrated nor edited; its removal is a separate change.
+`repos/docs` has no in-flight task work and a clean tree. The retirement edits are applied on top of its committed pnpm conversion and never reintroduce `package-lock.json`. If either `repos/docs` or `repos/dapr-docs-copilot` gets uncommitted changes later, `pnpm run sync:repos` skips it and reports it as skipped; that is expected, not a failure. Before removing the `docs` entry points, any local branch that edits `repos/docs/scripts/zh-data/**` is moved to the mono root path. Edits to integrity logic made after migration go to the mono copy only. The copilot is neither migrated nor edited; its removal and its own pnpm conversion are separate changes.
 
 ## Detailed Code Change Inventory
 
@@ -118,8 +120,9 @@ Order: provisioning, toolchain, copied and moved tasks, check script, validation
 | `.hagicode/monospecs.yaml` | Modify | Append four entries (`v1.17`, `v1.17_zh` required; `v1.15`, `v1.15_zh` optional) with `branch`; keep the ten existing entries | Provisioning |
 | `scripts/sync-repos.mjs` | Modify | Branch-aware clone and switch, `optional` handling, diverged-entry failure; unchanged without `branch` | Provisioning |
 | `scripts/tests/sync-repos.test.mjs` | Add | `node:test` cases over temporary git repositories: clone on branch, dirty skip, fast-forward, diverged failure, optional skip | Provisioning validation |
-| `package.json` | Modify | Scripts `zh:data:sync`, `zh:data:test`, `zh:data:repair`, `zh:data:check`, `sync:repos:test`; dev dependencies `tsx`, `typescript`, `@types/node` | Toolchain |
+| `package.json` | Modify | Scripts `zh:data:sync`, `zh:data:test`, `zh:data:repair`, `zh:data:check`, `sync:repos:test`; dev dependencies `tsx`, `typescript`, `@types/node`; `packageManager` pin | Toolchain |
 | `pnpm-lock.yaml` | Modify | Lock new dev dependencies | Toolchain |
+| `pnpm-workspace.yaml` | Add | `allowBuilds: esbuild: true` with a comment that `tsx` needs esbuild's platform binary | Toolchain |
 | `scripts/zh-data/lib/translation-integrity-audit.ts` | Add | Byte copy of the copilot module | Integrity reconciliation |
 | `scripts/zh-data/lib/translation-integrity-models.ts` | Add | Byte copy of the copilot module | Integrity reconciliation |
 | `scripts/zh-data/sync_source_documents.ts` | Add | Copy of the `docs` file with the two import lines pointing at `./lib/...` | Data sync |
@@ -130,8 +133,8 @@ Order: provisioning, toolchain, copied and moved tasks, check script, validation
 | `repos/docs/scripts/zh-data/**` | Delete | After validation | `docs` |
 | `repos/docs/scripts/clone-repos.mjs` | Delete | After validation | `docs` |
 | `repos/docs/monospecs.yaml` | Delete | After validation | `docs` |
-| `repos/docs/package.json`, `package-lock.json` | Modify | Remove retired scripts and unused dependencies; refresh lock | `docs` |
-| `repos/docs/README.md` | Modify | "源码同步" points at the mono root | `docs` docs |
+| `repos/docs/package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml` | Modify | On top of the committed pnpm conversion: remove retired scripts, dependencies they alone needed (including `tsx`, `typescript`, `@types/node`) and the `esbuild` build allowance; refresh the lock | `docs` |
+| `repos/docs/README.md` | Modify | The pnpm "源码同步" commands (`pnpm install`, `pnpm run clone:repos`) become a pointer to the mono root | `docs` docs |
 | `repos/docs/SRC_TRANSLATION_BUILD_ANALYSIS.md` | Modify | Update references to removed scripts and root | `docs` docs |
 | `repos/dapr-docs-copilot/**` | No change | Out of scope; to be removed later | None |
 | `repos/fork-docs`, `dapr-cn-site`, `dapr-cn-site-case`, `dapr-cn-site-source`, `dapr-cn.github.io`, `docs-team`, `docsy`, `wowchemy-hugo-themes` | Verify | Search for references to the old root, record "no change" | Audit only |
@@ -176,7 +179,10 @@ flowchart LR
 
 ## Risks / Trade-offs
 
-- [The spec deltas still contain copilot-facing requirements that this scope narrowing supersedes] → The affected parts are: in `translation-workbench-workspace`, "Workbench resolves its workspace root to the mono root" and the copilot-suite scenario of "Workbench behavior is unchanged by the relocation"; in `workbench-checkout-provisioning`, "Fork checkouts are separate from the single fork-docs checkout", and the `fork-*` and `v1.15` required-versus-optional entries in "Required checkouts are declared" (this design declares four data checkouts, two of them optional). Reconcile them before implementation starts; tasks.md reflects the narrowed scope and is authoritative until then.
+- [The spec deltas still contain copilot-facing requirements that this scope narrowing supersedes] → The affected parts are: in `translation-workbench-workspace`, "Workbench resolves its workspace root to the mono root" and the copilot-suite scenario of "Workbench behavior is unchanged by the relocation"; in `workbench-checkout-provisioning`, "Fork checkouts are separate from the single fork-docs checkout", and the `fork-*` and `v1.15` required-versus-optional entries in "Required checkouts are declared" (this design declares four data checkouts, two of them optional), plus the "Copilot commands find the shared toolchain" scenario, which no longer holds because the copilot now installs its own `tsx`. Reconcile them before implementation starts; tasks.md reflects the narrowed scope and is authoritative until then.
+- [pnpm 12 skips esbuild's install script at the mono root, so `tsx` fails to start] → `pnpm-workspace.yaml` allows the `esbuild` build; task 2.1 verifies `pnpm exec tsx --version` runs after a clean install.
+- [Edits to `repos/docs` revert or duplicate its committed pnpm conversion] → Task 5.1 records the baseline commit first and 5.3 edits the existing pnpm files in place; `package-lock.json` is not restored.
+- [The copilot's test commands need its own `pnpm install`] → Comparisons in tasks 2.4 and 4.3 that run copilot scripts install the copilot's dependencies first and do not edit its files.
 - [Duplicated integrity modules drift between the mono root and the copilot] → The copilot copy is frozen and the copilot is being removed; task 2.2 records that the copies are identical at copy time.
 - [Copying changes dataset output] → Task 4.2 compares `zh:data:sync` output from the `docs` root and the mono root on the same inputs; only timestamp fields may differ.
 - [A dirty `repos/v1.17_zh` is skipped by provisioning, leaving a stale checkout] → The check script reports clean or dirty status as information; operators commit or stash before syncing, as the existing mono tool already requires.
@@ -187,7 +193,7 @@ flowchart LR
 ## Migration Plan
 
 1. Declare the four data checkouts and extend `sync-repos.mjs`; run its tests.
-2. Add the toolchain and scripts to the mono `package.json`; copy the integrity modules; move the sync script and test with repointed imports; run `zh:data:test`.
+2. Add the pnpm setup (`pnpm-workspace.yaml`, `packageManager`), toolchain and scripts to the mono `package.json`; copy the integrity modules; move the sync script and test with repointed imports; run `zh:data:test`.
 3. Add the workspace check; run it against a deliberately incomplete and a complete workspace.
 4. Provision checkouts; run `zh:data:test`, the check, and a sync-parity comparison against the `docs` root.
 5. Remove the retired entry points and update the READMEs and analysis note in `docs`; rerun the step 4 validation.
