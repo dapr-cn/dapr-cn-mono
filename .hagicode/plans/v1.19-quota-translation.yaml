@@ -1,0 +1,54 @@
+schemaVersion: "1.0"
+type: hagitask
+name: v1.19 额度窗口增量翻译(s55 主控 → h55 worker)
+enabled: true
+icon: lucide:languages
+color: tone-33
+payload:
+  title: v1.19 额度窗口增量翻译(s55 主控 → h55 worker)
+  isDefaultTitle: false
+  projectId: 1743256b-46c4-4fa1-9a6b-90605caf6cc3
+  targetType: repository
+  presetTaskId: normal-session
+  presetTaskLocale: zh-CN
+  presetTaskInput:
+    inputs:
+      heroId: 5de02573-c32b-4c71-b8e7-5cd924415ca9
+    targets:
+      targetRepositories:
+      - path: repos/v1.19_zh
+        name: v1.19_zh
+        displayName: v1.19_zh
+        accessType: write
+      - path: repos/v1.19
+        name: v1.19
+        displayName: v1.19
+        accessType: read
+      - path: repos/agent-skills
+        name: agent-skills
+        displayName: agent-skills
+        accessType: read
+    derived:
+      targetScopeMarkdown: |-
+        Writable repositories:
+        - `repos/v1.19_zh` (v1.19_zh)
+
+        Read-only repositories:
+        - `repos/v1.19` (v1.19)
+        - `repos/agent-skills` (agent-skills)
+    fileInputs:
+      normalSessionInput:
+        path: .hagicode/prompts/v1.19-quota-translation-master.md
+        template: 这是 v1.19 增量翻译的定时任务。你是主控:请阅读 {{filepath}} 中的提示词,并严格、完整地执行;翻译交给它指定的 worker 会话,你自己不翻译正文。
+schedule:
+  mode: quotaReset
+  quotaReset:
+    window: claudeFiveHour
+    minRemainingPercent: 30
+    maxMinutesBeforeReset: 60
+    requireManualConfirmation: true
+    skipConfirmationDuringUnattendedHours: true
+agentPool:
+  strategy: random
+  agents:
+  - heroId: 5de02573-c32b-4c71-b8e7-5cd924415ca9
