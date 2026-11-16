@@ -59,24 +59,6 @@ repositories:
   status: "active"
   note: "Chinese translation data for v1.17; written by zh:data:sync (required)."
 
-- path: "repos/v1.15"
-  url: "https://github.com/dapr/docs.git"
-  displayName: "v1.15"
-  branch: "v1.15"
-  optional: true
-  tags: [ data, upstream, source ]
-  status: "active"
-  note: "Upstream Dapr docs for v1.15; source documents for the zh data sync (optional)."
-
-- path: "repos/v1.15_zh"
-  url: "https://github.com/dapr/docs-zh.git"
-  displayName: "v1.15_zh"
-  branch: "v1.15_content"
-  optional: true
-  tags: [ data, zh-official ]
-  status: "active"
-  note: "Chinese translation data for v1.15; written by zh:data:sync (optional)."
-
 - path: "repos/v1.19"
   url: "https://github.com/dapr/docs.git"
   displayName: "v1.19"
