@@ -22,7 +22,6 @@ import { repoPathsForVersion, resolveDefaultVersion } from './lib/default-versio
 
 const execFileAsync = promisify(execFile);
 const DEFAULT_ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
-const OPTIONAL_CHECKOUTS = ['repos/v1.15', 'repos/v1.15_zh'];
 const SYNC_COMMAND = 'pnpm run sync:repos';
 const INSTALL_COMMAND = 'pnpm install';
 
@@ -102,11 +101,6 @@ export async function checkWorkspace(root) {
     }
     const changed = await changedPathCount(dir);
     ok(`${checkout} is present (${changed === 0 ? 'clean' : `dirty: ${changed} changed paths, left as they are`})`);
-  }
-
-  for (const checkout of OPTIONAL_CHECKOUTS) {
-    const present = await exists(path.join(root, checkout, '.git'));
-    info(`${checkout} is ${present ? 'present' : 'absent'} (optional, not required by the data tasks)`);
   }
 
   return { lines, unmet: lines.filter((line) => line.level === 'missing').length };
