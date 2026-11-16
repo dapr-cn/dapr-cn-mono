@@ -308,6 +308,67 @@ async function validateMissingDependencyError() {
   }
 }
 
+async function validateStaticBuild() {
+  const workspace = await createWorkspace()
+  try {
+    // a fake extended hugo that "builds" by writing index.html into --destination
+    const buildHugo = path.join(workspace.tempRoot, 'fake-build-hugo.mjs')
+    await writeFile(
+      buildHugo,
+      [
+        '#!/usr/bin/env node',
+        "import { mkdirSync, writeFileSync } from 'node:fs'",
+        'const args = process.argv.slice(2)',
+        "if (args[0] === 'version') { console.log('hugo v0.147.8+extended linux/amd64'); process.exit(0) }",
+        "const at = (name) => args[args.indexOf(name) + 1]",
+        "mkdirSync(at('--destination'), { recursive: true })",
+        "writeFileSync(`${at('--destination')}/index.html`, args.join(' '))",
+        "console.log(`[fake-hugo] build cwd=${process.cwd()}`)",
+      ].join('\n'),
+      'utf8',
+    )
+    await chmod(buildHugo, 0o755)
+    const fakeBin = path.join(workspace.tempRoot, 'bin')
+    await mkdir(fakeBin, { recursive: true })
+    await writeFile(path.join(fakeBin, 'go'), '#!/bin/sh\necho "go version go1.24.4 linux/amd64"\n', 'utf8')
+    await chmod(path.join(fakeBin, 'go'), 0o755)
+    const env = { PATH: `${fakeBin}${path.delimiter}${process.env.PATH ?? ''}` }
+    const args = ['--workspace-root', workspace.workspaceRoot, '--version', 'v1.17', '--hugo-bin', buildHugo, '--build']
+
+    // PostCSS missing: the build stops before Hugo and says what to run
+    const missing = await runBridge(args, env)
+    assert.equal(missing.exitCode, 1)
+    assert.match(missing.stderr, /构建前置条件不满足/)
+    assert.match(missing.stderr, /PostCSS/)
+    assert.match(missing.stderr, /npm ci/)
+
+    const postcssBin = path.join(workspace.sourceRepo, 'node_modules', '.bin', 'postcss')
+    await mkdir(path.dirname(postcssBin), { recursive: true })
+    await writeFile(postcssBin, '#!/bin/sh\n', 'utf8')
+
+    const dry = await runBridge([...args, '--dry-run'], env)
+    assert.equal(dry.exitCode, 0, dry.stderr)
+    assert.match(dry.stdout, /mode=build dry-run/)
+
+    const built = await runBridge([...args, '--base-url', 'https://example.test/'], env)
+    assert.equal(built.exitCode, 0, built.stderr)
+    const publicDir = path.join(workspace.zhRepo, 'site', 'tmp', 'public')
+    assert.match(built.stdout, /build ok/)
+    const recorded = await readFile(path.join(publicDir, 'index.html'), 'utf8')
+    assert.match(recorded, /--minify/)
+    assert.match(recorded, /--baseURL https:\/\/example\.test\//)
+    assert.match(recorded, /--cleanDestinationDir/)
+    assert.equal(existsSync(path.join(workspace.sourceRepo, 'daprdocs', 'public')), false, 'the source repository receives no build output')
+
+    const custom = path.join(workspace.tempRoot, 'out')
+    const second = await runBridge([...args, '--destination', custom, '--no-minify'], env)
+    assert.equal(second.exitCode, 0, second.stderr)
+    assert.doesNotMatch(await readFile(path.join(custom, 'index.html'), 'utf8'), /--minify/)
+  } finally {
+    await workspace.cleanup()
+  }
+}
+
 async function validateSmokeLaunch() {
   const workspace = await createWorkspace()
   try {
@@ -407,6 +468,7 @@ async function validateDefaultVersionResolution() {
 
 await validateConfigRewriteAndStableOutput()
 await validateMissingDependencyError()
+await validateStaticBuild()
 await validateSmokeLaunch()
 await validateDefaultVersionResolution()
 

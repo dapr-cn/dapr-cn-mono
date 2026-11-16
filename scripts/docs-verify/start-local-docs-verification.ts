@@ -13,6 +13,10 @@ type CliOptions = {
   port: number
   hugoBin?: string
   dryRun: boolean
+  build: boolean
+  minify: boolean
+  destination?: string
+  baseUrl?: string
 }
 
 export function parseArgs(argv: string[]): CliOptions {
@@ -23,6 +27,8 @@ export function parseArgs(argv: string[]): CliOptions {
     host: '127.0.0.1',
     port: 1313,
     dryRun: false,
+    build: false,
+    minify: true,
   }
   let versionGiven = false
 
@@ -105,6 +111,37 @@ export function parseArgs(argv: string[]): CliOptions {
       continue
     }
 
+    // --build: one-off static build of the merged site instead of `hugo server` (see the zh repo README)
+    if (value === '--build') {
+      options.build = true
+      continue
+    }
+
+    if (value === '--no-minify') {
+      options.minify = false
+      continue
+    }
+
+    if (value === '--destination') {
+      const nextValue = argv[index + 1]
+      if (!nextValue) {
+        throw new Error('`--destination` 缺少值')
+      }
+      options.destination = path.resolve(nextValue)
+      index += 1
+      continue
+    }
+
+    if (value === '--base-url') {
+      const nextValue = argv[index + 1]
+      if (!nextValue) {
+        throw new Error('`--base-url` 缺少值')
+      }
+      options.baseUrl = nextValue
+      index += 1
+      continue
+    }
+
     throw new Error(`不支持的参数：${value}`)
   }
 
@@ -157,6 +194,19 @@ async function main() {
 
   if (options.dryRun) {
     childArgs.push('--dry-run')
+  }
+
+  if (options.build) {
+    childArgs.push('--build')
+    if (!options.minify) {
+      childArgs.push('--no-minify')
+    }
+    if (options.destination) {
+      childArgs.push('--destination', options.destination)
+    }
+    if (options.baseUrl) {
+      childArgs.push('--base-url', options.baseUrl)
+    }
   }
 
   const child = spawn(process.execPath, childArgs, {
