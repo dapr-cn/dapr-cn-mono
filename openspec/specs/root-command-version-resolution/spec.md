@@ -1,10 +1,10 @@
-# Spec Delta
+# Spec
 
 ## Purpose
 
 Defines how the mono root commands `zh:data:sync`, `zh:data:repair` and `docs:verify` decide which Dapr docs version they work on, so a newly bootstrapped version does not require editing any script and an explicit `--version` always behaves the same way.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Default version comes from monospecs
 When `--version` is not given, each of `zh:data:sync`, `zh:data:repair` and `docs:verify` SHALL use the highest version `vX.Y` in `.hagicode/monospecs.yaml` for which both `repos/vX.Y` and `repos/vX.Y_zh` are registered and neither is marked `optional: true`. Versions SHALL be compared numerically by major and then minor.
