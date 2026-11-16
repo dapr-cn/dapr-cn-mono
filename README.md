@@ -10,7 +10,7 @@ This repository holds only management files. Each project lives in its own GitHu
 dapr-cn-mono/
 ├── .hagicode/monospecs.yaml   # list of repositories, their URLs, tags and status
 ├── scripts/sync-repos.mjs     # clone missing repositories, fast-forward clean ones
-├── scripts/docs-verify/       # docs:verify, the local verification site entry
+├── scripts/docs-verify/       # docs:verify / docs:build, the local verification site entry
 ├── scripts/lib/default-version.mjs # default Dapr docs version from monospecs (zh:data:*, docs:verify)
 ├── openspec/                  # OpenSpec specs and changes for all repositories
 ├── package.json
@@ -39,8 +39,6 @@ The Chinese Dapr documentation is translated by the `dapr-docs-translation` skil
 | `repos/v1.17` | **Read-only source**: English Dapr v1.17 docs. Feeds `repos/v1.17_zh/data/source` through `zh:data:sync`. |
 | `repos/v1.19_zh` | **Active translation target.** Holds v1.19 translation state and `translated_content/zh_CN`; `data/` belongs to `zh:data:sync`. |
 | `repos/v1.19` | **Read-only source**: English Dapr v1.19 docs. Feeds `repos/v1.19_zh/data/source` through `zh:data:sync`. |
-| `repos/v1.15` | **Read-only source** for v1.15 (optional). |
-| `repos/v1.15_zh` | Frozen optional v1.15 translation (last commit 2025-07-12). No profile until it is revived. |
 | `repos/agent-skills` | Owns five skills: the `dapr-docs-translation` engine, `dapr-docs-translate-incremental`, `dapr-docs-translation-verify`, `dapr-docs-version-bootstrap` and `dapr-docs-upstream-pr`. Carries no repository facts. |
 | `repos/docs` | Legacy Crowdin-managed content. Not a skill target. |
 | `repos/fork-docs` | Fork of `dapr/docs`, used to open upstream pull requests by hand (see below). |
@@ -140,14 +138,29 @@ For each version the four skills in `repos/agent-skills` run in this order: `dap
 - **`dapr-docs-version-bootstrap`:** creates local clones and the local branch `vX.Y_content`, and commits its new profile and `release.yaml`. It pushes `vX.Y_content` only in step S7, after its own confirmation. It never force-pushes and does not use `adopt`.
 - **`dapr-docs-upstream-pr`:** pushes to `dapr/docs-zh` (stage A) and to the fork (step B4) only after a separate confirmation for each push, and opens pull requests (A2 and B5) only after a separate confirmation each. It never force-pushes and never merges a diverged branch.
 
+### Resetting the upstream source repositories
+
+`repos/vX.Y` track `dapr/docs`, where nobody here has write access, so they must always equal the remote branch.
+
+```bash
+pnpm run source:reset --dry-run   # list what would be discarded
+pnpm run source:reset             # every required repos/vX.Y
+pnpm run source:reset --version v1.17
+```
+
+The command fetches `origin/<branch>` and runs `checkout -f -B`, `reset --hard` and `clean -fd`. It discards local commits, tracked edits and untracked files (ignored files such as `node_modules` stay). It never touches `repos/vX.Y_zh`.
+
 ### Local verification site
 
 ```bash
 pnpm run docs:verify
+pnpm run docs:build
 pnpm run docs:verify:test
 ```
 
 Defaults: the version is the default described under zh data tasks (currently `v1.19`), `--source-repo repos/<version>`, `--zh-repo repos/<version>_zh`, `--host 127.0.0.1`, `--port 1313`. Pass `--version` to choose another version; explicit repository options still win. Other options: `--hugo-bin <path>` when `hugo` is not on `PATH`, and `--dry-run` to check and generate the config without starting the server. Pass options after the script name, without `--`. The command prints the resolved source repository, zh repository, generated config, cache directory, Hugo binary and preview URL (`http://127.0.0.1:1313/zh-hans/` by default). Everything it writes stays in `repos/<version>_zh/site`.
+
+`pnpm run docs:build` runs a one-off static build of the merged site (official English pages plus the Chinese translations) instead of `hugo server`. It takes the same options plus `--no-minify`, `--destination <dir>` and `--base-url <url>`; the output goes to `repos/<version>_zh/site/tmp/public` by default. Before building it checks for Hugo extended, Go and PostCSS (`npm ci` in `repos/<version>`) and prints the install command for whatever is missing.
 
 ### Translation state
 

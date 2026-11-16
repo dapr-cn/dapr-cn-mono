@@ -81,6 +81,10 @@ The system SHALL provide a `docs:verify` command at the mono root that serves as
 - **WHEN** the operator supplies `version`, `sourceRepo`, `zhRepo`, `host` or `port`
 - **THEN** the entry point SHALL forward the resolved values to the zh-repository runner so the launched site reflects the requested configuration
 
+#### Scenario: Operator builds the merged static site from the mono root
+- **WHEN** the operator runs `pnpm run docs:build` at the mono root
+- **THEN** the entry SHALL forward `--build` (and `--no-minify`, `--destination`, `--base-url` when given) to the zh-repository runner, which MUST verify Hugo extended, Go and PostCSS before building and write the output only under the zh repository (default `site/tmp/public`), leaving the source repository unmodified
+
 #### Scenario: Entry test runs from the mono root
 - **WHEN** the operator runs `pnpm run docs:verify:test` at the mono root
 - **THEN** the entry's test suite MUST run and report pass or fail through its exit code
