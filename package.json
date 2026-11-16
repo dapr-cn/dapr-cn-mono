@@ -13,7 +13,8 @@
     "zh:data:test": "tsx scripts/zh-data/tests/test_sync_source_documents.ts",
     "zh:data:repair": "tsx scripts/zh-data/repair_translation_integrity.ts",
     "docs:verify": "tsx scripts/docs-verify/start-local-docs-verification.ts",
-    "docs:verify:test": "tsx scripts/docs-verify/tests/validate-local-docs-verification.ts"
+    "docs:verify:test": "tsx scripts/docs-verify/tests/validate-local-docs-verification.ts",
+    "version:default:test": "node --test scripts/tests/default-version.test.mjs"
   },
   "license": "MIT",
   "dependencies": {

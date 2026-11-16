@@ -17,7 +17,7 @@ repositories:
   displayName: "agent-skills"
   tags: [ tooling, agent-skills, translation, status-active ]
   status: "active"
-  note: "Agent skills of the organization; holds dapr-docs-translation, copied from doc-translation of newbe36524/personal-agent-skills."
+  note: "Agent skills of the organization: dapr-docs-translation, dapr-docs-translate-incremental, dapr-docs-translation-verify, dapr-docs-version-bootstrap, dapr-docs-upstream-pr."
 
 - path: "repos/fork-docs"
   url: "https://github.com/dapr-cn/fork-docs.git"
@@ -76,3 +76,19 @@ repositories:
   tags: [ data, zh-official ]
   status: "active"
   note: "Chinese translation data for v1.15; written by zh:data:sync (optional)."
+
+- path: "repos/v1.19"
+  url: "https://github.com/dapr/docs.git"
+  displayName: "v1.19"
+  branch: "v1.19"
+  tags: [ data, upstream, source ]
+  status: "active"
+  note: "Upstream Dapr docs for v1.19; source documents for the zh data sync (required)."
+
+- path: "repos/v1.19_zh"
+  url: "https://github.com/dapr/docs-zh.git"
+  displayName: "v1.19_zh"
+  branch: "v1.19_content"
+  tags: [ data, zh-official ]
+  status: "active"
+  note: "Chinese translation data for v1.19; written by zh:data:sync (required)."
