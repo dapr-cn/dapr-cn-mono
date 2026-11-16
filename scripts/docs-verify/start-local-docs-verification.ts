@@ -1,7 +1,8 @@
 import { spawn } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
+import { resolveDefaultVersion } from '../lib/default-version.mjs'
 
 type CliOptions = {
   version: string
@@ -14,15 +15,16 @@ type CliOptions = {
   dryRun: boolean
 }
 
-function parseArgs(argv: string[]): CliOptions {
+export function parseArgs(argv: string[]): CliOptions {
   const defaultWorkspaceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..')
   const options: CliOptions = {
-    version: 'v1.17',
+    version: '',
     workspaceRoot: defaultWorkspaceRoot,
     host: '127.0.0.1',
     port: 1313,
     dryRun: false,
   }
+  let versionGiven = false
 
   for (let index = 0; index < argv.length; index += 1) {
     const value = argv[index]
@@ -33,6 +35,7 @@ function parseArgs(argv: string[]): CliOptions {
         throw new Error('`--version` 缺少值')
       }
       options.version = nextValue
+      versionGiven = true
       index += 1
       continue
     }
@@ -105,6 +108,11 @@ function parseArgs(argv: string[]): CliOptions {
     throw new Error(`不支持的参数：${value}`)
   }
 
+  // Without --version the default comes from the monospecs under --workspace-root; an explicit --version never reads it.
+  if (!versionGiven) {
+    options.version = resolveDefaultVersion(options.workspaceRoot)
+  }
+
   if (!Number.isInteger(options.port) || options.port <= 0 || options.port > 65535) {
     throw new Error(`端口不合法：${options.port}`)
   }
@@ -112,7 +120,7 @@ function parseArgs(argv: string[]): CliOptions {
   return options
 }
 
-function resolveRepoPaths(options: CliOptions) {
+export function resolveRepoPaths(options: CliOptions) {
   const sourceRepo = options.sourceRepo ?? path.join(options.workspaceRoot, 'repos', options.version)
   const zhRepo = options.zhRepo ?? path.join(options.workspaceRoot, 'repos', `${options.version}_zh`)
   const runnerPath = path.join(zhRepo, 'scripts', 'run-local-docs-verification-site.mjs')
@@ -165,7 +173,9 @@ async function main() {
   })
 }
 
-void main().catch((error) => {
-  console.error('[docs:verify] failed', error instanceof Error ? error.message : error)
-  process.exitCode = 1
-})
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main().catch((error) => {
+    console.error('[docs:verify] failed', error instanceof Error ? error.message : error)
+    process.exitCode = 1
+  })
+}

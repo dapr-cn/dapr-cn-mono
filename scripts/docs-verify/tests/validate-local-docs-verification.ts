@@ -6,6 +6,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import yaml from 'js-yaml'
+import { parseArgs, resolveRepoPaths } from '../start-local-docs-verification.ts'
 
 type SpawnResult = {
   exitCode: number | null
@@ -27,6 +28,20 @@ const BRIDGE_SCRIPT = path.join(PACKAGE_ROOT, 'scripts', 'docs-verify', 'start-l
 const RENDER_SCRIPT = path.join(WORKSPACE_ROOT, 'repos', 'v1.17_zh', 'scripts', 'render-local-docs-verification-config.mjs')
 const RUNNER_SCRIPT = path.join(WORKSPACE_ROOT, 'repos', 'v1.17_zh', 'scripts', 'run-local-docs-verification-site.mjs')
 
+// The current shape: v1.17 required, v1.15 optional. The temporary workspaces use it so the default version stays v1.17.
+const CURRENT_SHAPE_MONOSPECS = [
+  'repositories:',
+  '- path: "repos/v1.17"',
+  '  url: "https://github.com/dapr/docs.git"',
+  '- path: "repos/v1.17_zh"',
+  '  url: "https://github.com/dapr/docs-zh.git"',
+  '- path: "repos/v1.15"',
+  '  optional: true',
+  '- path: "repos/v1.15_zh"',
+  '  optional: true',
+  '',
+].join('\n')
+
 async function createWorkspace() {
   const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'local-docs-verification-'))
   const workspaceRoot = path.join(tempRoot, 'workspace')
@@ -42,6 +57,8 @@ async function createWorkspace() {
   await mkdir(path.dirname(zhDocPath), { recursive: true })
   await mkdir(scriptsDir, { recursive: true })
   await symlink(path.join(WORKSPACE_ROOT, 'node_modules'), nodeModulesLink, 'dir')
+  await mkdir(path.join(workspaceRoot, '.hagicode'), { recursive: true })
+  await writeFile(path.join(workspaceRoot, '.hagicode', 'monospecs.yaml'), CURRENT_SHAPE_MONOSPECS)
 
   await writeFile(
     path.join(sourceRepo, 'hugo.yaml'),
@@ -334,8 +351,63 @@ async function validateSmokeLaunch() {
   }
 }
 
+async function validateDefaultVersionResolution() {
+  const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'docs-verify-default-version-'))
+  try {
+    const workspaceRoot = path.join(tempRoot, 'workspace')
+    const monospecsPath = path.join(workspaceRoot, '.hagicode', 'monospecs.yaml')
+    const zhRunnerDir = path.join(workspaceRoot, 'repos', 'v1.17_zh', 'scripts')
+    await mkdir(path.dirname(monospecsPath), { recursive: true })
+    await mkdir(zhRunnerDir, { recursive: true })
+    await writeFile(path.join(zhRunnerDir, 'run-local-docs-verification-site.mjs'), '')
+    await writeFile(monospecsPath, CURRENT_SHAPE_MONOSPECS)
+
+    // No --version: the default comes from the monospecs under --workspace-root.
+    const defaulted = parseArgs(['--workspace-root', workspaceRoot])
+    assert.equal(defaulted.version, 'v1.17')
+    const defaultedPaths = resolveRepoPaths(defaulted)
+    assert.equal(defaultedPaths.sourceRepo, path.join(workspaceRoot, 'repos', 'v1.17'))
+    assert.equal(defaultedPaths.zhRepo, path.join(workspaceRoot, 'repos', 'v1.17_zh'))
+
+    // An explicit --version wins over the monospecs default.
+    const explicit = parseArgs([
+      '--workspace-root',
+      workspaceRoot,
+      '--version',
+      'v1.15',
+      '--zh-repo',
+      path.join(workspaceRoot, 'repos', 'v1.17_zh'),
+    ])
+    assert.equal(explicit.version, 'v1.15')
+    assert.equal(resolveRepoPaths(explicit).sourceRepo, path.join(workspaceRoot, 'repos', 'v1.15'))
+
+    // Explicit repository paths win over the derived ones.
+    const explicitRepos = parseArgs([
+      '--workspace-root',
+      workspaceRoot,
+      '--source-repo',
+      path.join(tempRoot, 'custom-source'),
+      '--zh-repo',
+      path.join(workspaceRoot, 'repos', 'v1.17_zh'),
+    ])
+    const explicitPaths = resolveRepoPaths(explicitRepos)
+    assert.equal(explicitPaths.sourceRepo, path.join(tempRoot, 'custom-source'))
+    assert.equal(explicitPaths.zhRepo, path.join(workspaceRoot, 'repos', 'v1.17_zh'))
+
+    // Without --version and without a usable monospecs version, the error is clear.
+    await writeFile(monospecsPath, 'repositories: []\n')
+    assert.throws(() => parseArgs(['--workspace-root', workspaceRoot]), /没有可用的必需版本配对/)
+    assert.throws(() => parseArgs(['--workspace-root', workspaceRoot]), /--version vX\.Y/)
+    // An explicit --version still works when monospecs has no usable version.
+    assert.equal(parseArgs(['--workspace-root', workspaceRoot, '--version', 'v1.17']).version, 'v1.17')
+  } finally {
+    await rm(tempRoot, { recursive: true, force: true })
+  }
+}
+
 await validateConfigRewriteAndStableOutput()
 await validateMissingDependencyError()
 await validateSmokeLaunch()
+await validateDefaultVersionResolution()
 
 console.log('validated local docs verification contracts')

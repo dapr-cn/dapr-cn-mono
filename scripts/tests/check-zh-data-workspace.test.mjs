@@ -22,10 +22,10 @@ const CONFIG = [
 ].join('\n');
 
 /** A temporary workspace with a package.json and monospecs.yaml, and no checkouts or toolchain yet. */
-function makeWorkspace(base) {
+function makeWorkspace(base, config = CONFIG) {
   const root = mkdtempSync(path.join(base, 'ws-'));
   mkdirSync(path.join(root, '.hagicode'));
-  writeFileSync(path.join(root, '.hagicode', 'monospecs.yaml'), CONFIG);
+  writeFileSync(path.join(root, '.hagicode', 'monospecs.yaml'), config);
   writeFileSync(
     path.join(root, 'package.json'),
     JSON.stringify({ scripts: { 'zh:data:sync': 'tsx scripts/zh-data/sync_source_documents.ts' } }, null, 2),
@@ -109,6 +109,38 @@ withTempBase('complete workspace passes and prints the resolved root', (base) =>
   assert.equal(result.status, 0, result.stdout + result.stderr);
   assert.match(result.stdout, new RegExp(`Mono root: ${root.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`));
   assert.match(result.stdout, /zh data workspace is ready/);
+});
+
+withTempBase('required checkouts follow the configured default version', (base) => {
+  const config = [
+    'repositories:',
+    '- path: "repos/v1.17"',
+    '  url: "https://github.com/dapr/docs.git"',
+    '  branch: "v1.17"',
+    '  optional: true',
+    '- path: "repos/v1.17_zh"',
+    '  url: "https://github.com/dapr/docs-zh.git"',
+    '  branch: "v1.17_content"',
+    '  optional: true',
+    '- path: "repos/v1.19"',
+    '  url: "https://github.com/dapr/docs.git"',
+    '  branch: "v1.19"',
+    '- path: "repos/v1.19_zh"',
+    '  url: "https://github.com/dapr/docs-zh.git"',
+    '  branch: "v1.19_content"',
+    '',
+  ].join('\n');
+  const root = makeWorkspace(base, config);
+  makeCheckout(root, 'v1.19');
+  makeCheckout(root, 'v1.19_zh');
+  installTsx(root);
+
+  const result = runCheck(root);
+
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  assert.match(result.stdout, /repos\/v1\.19 is present/);
+  assert.match(result.stdout, /repos\/v1\.19_zh is present/);
+  assert.doesNotMatch(result.stdout, /repos\/v1\.17 is missing/);
 });
 
 withTempBase('a dirty checkout is reported as information and does not fail the check', (base) => {

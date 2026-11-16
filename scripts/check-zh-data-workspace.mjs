@@ -3,7 +3,7 @@
 /**
  * Read-only check that the mono root can run the zh data tasks.
  *
- * Verifies the zh:data:sync script, the tsx executable and the required v1.17
+ * Verifies the zh:data:sync script, the tsx executable and the default-version
  * checkouts. Prints one line per check, names each unmet precondition with the
  * command that provisions it, and exits non-zero when anything is unmet.
  * It never creates, modifies or deletes a file or a checkout.
@@ -18,10 +18,10 @@ import path from 'path';
 import process from 'process';
 import { fileURLToPath, pathToFileURL } from 'url';
 import yaml from 'js-yaml';
+import { repoPathsForVersion, resolveDefaultVersion } from './lib/default-version.mjs';
 
 const execFileAsync = promisify(execFile);
 const DEFAULT_ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
-const REQUIRED_CHECKOUTS = ['repos/v1.17', 'repos/v1.17_zh'];
 const OPTIONAL_CHECKOUTS = ['repos/v1.15', 'repos/v1.15_zh'];
 const SYNC_COMMAND = 'pnpm run sync:repos';
 const INSTALL_COMMAND = 'pnpm install';
@@ -81,7 +81,14 @@ export async function checkWorkspace(root) {
   const config = await readConfigIfPresent(path.join(root, '.hagicode', 'monospecs.yaml'));
   const declared = new Map((config?.repositories ?? []).map((repo) => [repo.path, repo]));
 
-  for (const checkout of REQUIRED_CHECKOUTS) {
+  let requiredCheckouts = [];
+  try {
+    requiredCheckouts = Object.values(repoPathsForVersion(resolveDefaultVersion(root)));
+  } catch (error) {
+    unmet(error instanceof Error ? error.message : String(error), 'register a required source/translation version pair in .hagicode/monospecs.yaml');
+  }
+
+  for (const checkout of requiredCheckouts) {
     const dir = path.join(root, checkout);
     const entry = declared.get(checkout);
     if (!entry) {

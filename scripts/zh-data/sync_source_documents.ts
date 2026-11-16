@@ -5,6 +5,7 @@ import { spawnSync } from 'node:child_process'
 import { parseArgs } from 'node:util'
 import { pathToFileURL } from 'node:url'
 import { reconcileTranslationIntegrity } from './lib/translation-integrity-audit.ts'
+import { repoPathsForVersion, resolveDefaultVersion } from '../lib/default-version.mjs'
 import type { SyncStatusPayload, TranslationStatePayload } from './lib/translation-integrity-models.ts'
 
 const ZH_SOURCE_PREFIX = 'translations/docs-zh/translated_content/zh_CN/'
@@ -193,25 +194,6 @@ function writeJson(filePath: string, payload: unknown): void {
 function copySourceFile(sourcePath: string, targetPath: string): void {
   mkdirSync(dirname(targetPath), { recursive: true })
   copyFileSync(sourcePath, targetPath)
-}
-
-function removeFileAndEmptyParents(filePath: string, stopAt: string): void {
-  rmSync(filePath, { force: true })
-
-  const resolvedStopAt = resolve(stopAt)
-  let current = dirname(filePath)
-  while (resolve(current) !== resolvedStopAt) {
-    const relativeToStop = relative(resolvedStopAt, current)
-    if (relativeToStop === '' || relativeToStop.startsWith('..')) {
-      break
-    }
-    if (readdirSync(current).length > 0) {
-      break
-    }
-
-    rmSync(current, { recursive: true, force: true })
-    current = dirname(current)
-  }
 }
 
 function verifySourceItem(
@@ -642,15 +624,6 @@ export async function buildPipeline(options: BuildPipelineOptions) {
       } satisfies SyncItem
     }),
   )
-  for (const item of translationItemsByKey.values()) {
-    const translationPath = join(zhRepo, item.translationFile)
-    const bucket = bucketConfigs.find((config) => config.bucket === item.bucket)
-    if (!bucket) {
-      continue
-    }
-
-    removeFileAndEmptyParents(translationPath, join(zhRepo, bucket.translationRoot))
-  }
   syncItems.sort((left, right) => `${left.bucket}:${left.relativePath}`.localeCompare(`${right.bucket}:${right.relativePath}`))
 
   const bucketSummaryById = new Map(
@@ -784,22 +757,29 @@ export async function buildPipeline(options: BuildPipelineOptions) {
   }
 }
 
-function parseCliArgs() {
+export function parseCliArgs(argv: string[] = process.argv.slice(2), monoRoot?: string) {
   const { values } = parseArgs({
+    args: argv,
     options: {
-      'source-repo': { type: 'string', default: 'repos/v1.17' },
-      'zh-repo': { type: 'string', default: 'repos/v1.17_zh' },
+      'source-repo': { type: 'string' },
+      'zh-repo': { type: 'string' },
       'hugo-config': { type: 'string' },
-      version: { type: 'string', default: 'v1.17' },
+      version: { type: 'string' },
       timestamp: { type: 'string' },
     },
   })
 
+  // Without --version the default comes from monospecs; an explicit --version never reads it.
+  const version = values.version ?? resolveDefaultVersion(monoRoot)
+  const derived = repoPathsForVersion(version)
+  const sourceRepo = values['source-repo'] ?? derived.sourceRepo
+  const zhRepo = values['zh-repo'] ?? derived.zhRepo
+
   return {
-    sourceRepo: values['source-repo'] ?? 'repos/v1.17',
-    zhRepo: values['zh-repo'] ?? 'repos/v1.17_zh',
-    hugoConfigPath: values['hugo-config'] ?? join(values['source-repo'] ?? 'repos/v1.17', 'hugo.yaml'),
-    version: values.version ?? 'v1.17',
+    sourceRepo,
+    zhRepo,
+    hugoConfigPath: values['hugo-config'] ?? join(sourceRepo, 'hugo.yaml'),
+    version,
     generatedAt: values.timestamp ?? new Date().toISOString(),
   }
 }
