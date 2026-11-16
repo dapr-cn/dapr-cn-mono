@@ -82,8 +82,6 @@ The zh data tasks read and write these checkouts. They are declared in `.hagicod
 | `repos/v1.17_zh` | `v1.17_content` | yes | Chinese translation data for v1.17 |
 | `repos/v1.19` | `v1.19` | yes | Upstream Dapr docs for v1.19: source documents |
 | `repos/v1.19_zh` | `v1.19_content` | yes | Chinese translation data for v1.19 |
-| `repos/v1.15` | `v1.15` | no | Upstream Dapr docs for v1.15 |
-| `repos/v1.15_zh` | `v1.15_content` | no | Chinese translation data for v1.15 |
 
 Provision them with `pnpm run sync:repos`, as above.
 
@@ -216,8 +214,6 @@ ok      zh:data:sync script is defined in package.json
 ok      tsx is installed (node_modules/.bin/tsx)
 ok      repos/v1.19 is present (clean)
 ok      repos/v1.19_zh is present (clean)
-info    repos/v1.15 is present (optional, not required by the data tasks)
-info    repos/v1.15_zh is present (optional, not required by the data tasks)
 
 zh data workspace is ready.
 ```

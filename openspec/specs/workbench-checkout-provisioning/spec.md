@@ -11,7 +11,7 @@ The system SHALL declare in `.hagicode/monospecs.yaml` every versioned checkout 
 
 #### Scenario: Version set is declared
 - **WHEN** the declaration is read
-- **THEN** it SHALL list `repos/v1.15`, `repos/v1.15_zh`, `repos/v1.17` and `repos/v1.17_zh`, each with the same remote and branch the declaration used before this change
+- **THEN** it SHALL list `repos/v1.17` and `repos/v1.17_zh`, each with the same remote and branch the declaration used before this change
 
 #### Scenario: Existing declarations are preserved
 - **WHEN** the copilot entry is removed

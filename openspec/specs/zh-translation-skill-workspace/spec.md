@@ -99,7 +99,7 @@ The system SHALL document in the mono root `README.md` that `zh:data:sync`, `zh:
 - **THEN** they SHALL NOT describe `v1.17` as a fixed default, SHALL explain how the default version is chosen, and SHALL NOT tell the operator to pass `--repo` to avoid a path outside the mono root
 
 ### Requirement: Roles of the listed repositories are documented
-The system SHALL document in the mono root `README.md` the role of each of `docs`, `agent-skills`, `fork-docs`, `v1.17`, `v1.17_zh`, `v1.15`, `v1.15_zh`, `dapr-cn-site`, `dapr-cn-site-source`, `dapr-cn-site-case` and `dapr-cn.github.io` under the translation workflow, MUST state that `v1.17` and `v1.15` are read-only sources, and MUST state that `agent-skills` owns the translation engine and the four orchestration skills and carries no repository facts.
+The system SHALL document in the mono root `README.md` the role of each of `docs`, `agent-skills`, `fork-docs`, `v1.17`, `v1.17_zh`, `dapr-cn-site`, `dapr-cn-site-source`, `dapr-cn-site-case` and `dapr-cn.github.io` under the translation workflow, MUST state that `v1.17` is a read-only source, and MUST state that `agent-skills` owns the translation engine and the four orchestration skills and carries no repository facts.
 
 #### Scenario: Operator finds the target repository
 - **WHEN** an operator reads the repository roles in the mono root `README.md`

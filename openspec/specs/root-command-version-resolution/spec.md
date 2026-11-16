@@ -10,7 +10,7 @@ Defines how the mono root commands `zh:data:sync`, `zh:data:repair` and `docs:ve
 When `--version` is not given, each of `zh:data:sync`, `zh:data:repair` and `docs:verify` SHALL use the highest version `vX.Y` in `.hagicode/monospecs.yaml` for which both `repos/vX.Y` and `repos/vX.Y_zh` are registered and neither is marked `optional: true`. Versions SHALL be compared numerically by major and then minor.
 
 #### Scenario: No-argument run keeps the v1.17 behavior
-- **GIVEN** the current `.hagicode/monospecs.yaml`, where `repos/v1.17` and `repos/v1.17_zh` are required and `repos/v1.15` and `repos/v1.15_zh` are optional
+- **GIVEN** the current `.hagicode/monospecs.yaml`, where `repos/v1.17` and `repos/v1.17_zh` are the only required pair
 - **WHEN** an operator runs `pnpm run zh:data:sync` without arguments
 - **THEN** the command SHALL use version `v1.17`, source repository `repos/v1.17` and zh repository `repos/v1.17_zh`, as it did before this change
 
