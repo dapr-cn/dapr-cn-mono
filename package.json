@@ -12,7 +12,9 @@
     "zh:data:sync": "tsx scripts/zh-data/sync_source_documents.ts",
     "zh:data:test": "tsx scripts/zh-data/tests/test_sync_source_documents.ts",
     "zh:data:repair": "tsx scripts/zh-data/repair_translation_integrity.ts",
+    "source:reset": "node scripts/reset-source-repos.mjs",
     "docs:verify": "tsx scripts/docs-verify/start-local-docs-verification.ts",
+    "docs:build": "tsx scripts/docs-verify/start-local-docs-verification.ts --build",
     "docs:verify:test": "tsx scripts/docs-verify/tests/validate-local-docs-verification.ts",
     "version:default:test": "node --test scripts/tests/default-version.test.mjs"
   },
